@@ -5,9 +5,9 @@ Aplikasi desktop Python untuk membuat dan mengelola dataset deteksi objek, membe
 ## Persyaratan
 
 - Windows, macOS, atau Linux.
-- Python 3.10–3.12 disarankan. Pastikan Python tersedia di terminal (`python --version` atau `python3 --version`).
-- Koneksi internet saat instalasi pertama: pip mungkin perlu mengunduh paket dan bobot model YOLO.
-- Untuk training, gunakan GPU NVIDIA jika tersedia. CPU tetap dapat dipakai, tetapi training biasanya jauh lebih lambat.
+- Python 3.10–3.12 disarankan.
+- Koneksi internet saat instalasi pertama.
+- GPU NVIDIA opsional. CPU juga didukung, tetapi jauh lebih lambat.
 
 ## Instalasi pertama
 
@@ -31,7 +31,7 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Jika PowerShell menolak aktivasi, jalankan `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` pada terminal tersebut, lalu aktifkan ulang.
+Jika aktivasi diblokir, jalankan `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` lalu aktifkan ulang.
 
 **Windows (Command Prompt):**
 
@@ -47,70 +47,118 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Perbarui pip dan pasang dependensi
+### 3. Pasang dependensi
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Optuna disertakan untuk fitur **Auto Tune**. Jika hanya ingin melabeli dan training biasa, fitur tersebut boleh diabaikan.
+Optuna juga dipasang melalui `requirements.txt` untuk fitur **Auto Tune**.
 
-### 4. (Opsional) Siapkan GPU NVIDIA
+### 4. Pasang dukungan GPU secara opsional
 
-Untuk GPU NVIDIA, pasang PyTorch yang sesuai dengan sistem operasi, driver, dan versi CUDA komputer Anda dengan mengikuti petunjuk resmi PyTorch: <https://pytorch.org/get-started/locally/>. Lakukan ini di virtual environment `.venv` yang sama. Setelah itu, pastikan `python -c "import torch; print(torch.cuda.is_available())"` menampilkan `True`.
+Untuk GPU NVIDIA, pasang build PyTorch yang sesuai dengan sistem operasi, driver, dan versi CUDA:
 
-Jangan memilih paket CUDA secara tebakan. Jika tidak ada GPU yang cocok atau PyTorch tidak mendeteksinya, aplikasi dapat berjalan menggunakan CPU.
+https://pytorch.org/get-started/locally/
+
+Jalankan perintah PyTorch yang dipilih dari terminal virtual environment `.venv` yang aktif. Lalu cek:
+
+```bash
+python -c "import torch; print(torch.cuda.is_available())"
+```
+
+Jika hasilnya `True`, Ultralytics dapat memakai CUDA. Jika tidak, aplikasi tetap dapat berjalan memakai CPU.
 
 ### 5. Jalankan aplikasi
-
-Dengan virtual environment aktif:
 
 ```bash
 python app.py
 ```
 
-Di Windows, `app.bat` juga dapat digunakan. Launcher akan mencari virtual environment `.venv` atau `venv` di dalam folder repository; jika tidak menemukannya, launcher mencoba Python yang tersedia di `PATH`. `app.vbs` menjalankan aplikasi tanpa jendela terminal, terutama berguna setelah dependensi berhasil dipasang.
+Di Windows, `app.bat` dapat dijalankan dengan double click. Launcher mencari `.venv` atau `venv` di dalam folder aplikasi, lalu mengambil fallback Python dari `PATH`. `app.vbs` menjalankan aplikasi tanpa jendela terminal.
 
-## Alur pertama kali sampai training
+## Dari pengisian data sampai training
 
-1. Jalankan aplikasi dan pilih **Proyek Baru**. Nama proyek hanya boleh berisi huruf, angka, `_`, dan `-`.
-2. Klik **Tambah ke Dataset** untuk memasukkan gambar. Data proyek disimpan di `projects/<nama-proyek>/` di dalam folder aplikasi.
-3. Tambahkan nama kelas pada panel kelas, lalu anotasi objek dengan membuat bounding box. Simpan label sesuai kelas. Untuk gambar yang memang tidak mengandung objek, tandai sebagai **null**.
-4. Ulangi anotasi sampai gambar siap. Fitur **Bulk Label** membantu meninjau banyak gambar sekaligus.
-5. Klik **Split...** untuk membagi data, misalnya `70% train`, `20% valid`, `10% test` (total harus 100%). Training memerlukan gambar pada subset `train` dan `valid`.
-6. (Opsional) Jalankan **Health Check** untuk melihat gambar/label yang hilang, distribusi kelas, dan masalah dataset.
-7. (Opsional) Klik **Preprocessing...** untuk membuat versi dataset baru. Dataset asli tidak ditimpa. Versi hasil tersimpan di `projects/<nama-proyek>/versions/`.
-8. Klik **Training YOLO...**. Pilih model awal (contoh `yolo26n.pt`), jumlah epoch, ukuran gambar, dan perangkat. Model/bobot yang belum tersedia dapat diunduh oleh Ultralytics saat pertama digunakan.
-9. Pilih `(dataset asli)` atau versi preprocessing yang ingin dipakai. Untuk percobaan awal, pilih model kecil seperti `yolo26n.pt`, nilai batch yang ringan, dan jumlah epoch secukupnya. Kurangi batch jika memori GPU habis; di CPU, gunakan ekspektasi waktu training yang lebih lama.
-10. Klik **Mulai Training** dan pantau status/progress. Tombol **Stop** meminta penghentian aman.
-11. Hasil training, termasuk bobot `best.pt` dan `last.pt`, disimpan di `projects/<nama-proyek>/runs/<nama-run>/`. `best.pt` biasanya menjadi pilihan untuk inferensi atau melanjutkan eksperimen.
+1. Jalankan aplikasi dan pilih **Proyek Baru**.
+2. Masukkan nama proyek tanpa spasi. Nama hanya boleh huruf, angka, `_`, atau `-`.
+3. Klik **Tambah ke Dataset** dan pilih gambar.
+4. Tambahkan kelas melalui panel kanan, lalu buat bounding box pada objek.
+5. Gambar yang tidak memiliki objek dapat ditandai sebagai **null**.
+6. Gunakan **Bulk Label** untuk mempercepat peninjauan dan pengelolaan label banyak gambar.
+7. Klik **Split...** dan bagi dataset. Contoh: 70% `train`, 20% `valid`, 10% `test`. Persentase harus total 100%.
+8. Pastikan subset `train` dan `valid` berisi gambar serta label.
+9. Opsional: klik **Health Check** untuk memeriksa kualitas dataset.
+10. Opsional: klik **Preprocessing...** untuk membuat versi dataset baru; dataset asli tidak akan ditimpa.
+11. Klik **Training YOLO...**.
+12. Pilih model, misalnya `yolo26n.pt` untuk percobaan ringan.
+13. Pilih `(dataset asli)` atau versi dataset dari folder `versions`.
+14. Isi epoch, ukuran gambar, dan batch. Mulai dengan batch kecil jika GPU memiliki memori terbatas.
+15. Klik **Mulai Training**. Gunakan **Stop** untuk meminta penghentian aman.
+16. Hasil training tersimpan di:
 
-## Struktur proyek dan path
+```text
+projects/<nama-proyek>/runs/<nama-run>/
+```
 
-Path data dibuat relatif terhadap lokasi kode aplikasi (`project.py`), bukan lokasi tertentu di komputer pembuat. Dengan demikian clone dapat berada di folder mana pun. Struktur yang dibuat aplikasi:
+Bobot penting berada di `weights/best.pt` dan `weights/last.pt`.
+
+## Struktur data aplikasi
+
+Aplikasi menyimpan semua project relatif terhadap lokasi file `project.py`. Lokasi lama milik pembuat komputer tidak digunakan.
 
 ```text
 UI-Teaching/
 ├── app.py
 ├── requirements.txt
-├── projects/                    # dibuat saat membuat proyek pertama
+├── projects/
 │   └── <nama-proyek>/
 │       ├── data.yaml
-│       ├── unsplit/              # gambar yang belum dibagi
+│       ├── unsplit/
 │       ├── train/
 │       ├── valid/
 │       ├── test/
-│       ├── versions/             # versi preprocessing (opsional)
-│       └── runs/                 # hasil training/tuning
-└── logs/                         # log aplikasi, bila tersedia
+│       ├── versions/
+│       └── runs/
+└── logs/
 ```
 
-Jangan memindahkan hanya file `data.yaml` secara terpisah dari folder dataset. Jika membuka dataset dari aplikasi, gunakan **Buka** dan pilih folder proyek di dalam `projects/`.
+Untuk membuka proyek lama, pilih **Buka** dan pilih folder langsung di dalam `projects/<nama-proyek>/`.
 
-## Catatan
+## Pembacaan dan penyimpanan label
 
-- Label deteksi menggunakan format YOLO: `class_id x_center y_center width height`, dengan koordinat ternormalisasi 0–1. ID kelas dimulai dari 0 dan harus sesuai urutan kelas di `data.yaml`.
-- `valid` dipakai untuk validasi selama training. `test` tidak otomatis dievaluasi dalam training standar.
-- Auto Tune bersifat opsional dan dapat memerlukan waktu serta resource komputasi yang besar.
-- Jika instalasi atau training gagal, jalankan melalui `python app.py` di terminal agar pesan error terlihat. Pastikan virtual environment aktif dan periksa bahwa perintah Python/pip berasal dari `.venv`.
+Format label YOLO adalah:
+
+```text
+class_id x_center y_center width height
+```
+
+Seluruh koordinat ternormalisasi antara `0` hingga `1`. ID kelas harus sesuai urutan pada `data.yaml`. Gambar bertanda null disimpan sebagai file label kosong.
+
+## Fitur utama
+
+- Labeling bounding box dengan mouse dan keyboard.
+- Undo, pindah subset, hapus gambar, tandai null, dan Bulk Label.
+- Label Assist dan Auto Detect memakai model `.pt`.
+- Health Check untuk statistik dataset.
+- Preprocessing dan augmentasi offline.
+- Training dan Auto Tune Ultralytics YOLO.
+- Hardware profile untuk CPU/GPU, batch, worker, cache, AMP, dan deterministic mode.
+- Resume training dari `weights/last.pt`.
+
+## Troubleshooting
+
+Jika terjadi error instalasi:
+
+```bash
+python -m pip show ultralytics
+python -c "import ultralytics, torch, PIL, numpy; print('OK')"
+```
+
+Jika error saat aplikasi dijalankan, jalankan dari terminal:
+
+```bash
+python app.py
+```
+
+Pesan aplikasi juga dapat dilihat di `logs/app.log` saat dijalankan melalui `pythonw` atau `app.vbs`.

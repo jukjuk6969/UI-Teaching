@@ -1,0 +1,5 @@
+# Dependensi aplikasi UI-Teaching
+numpy>=1.24
+Pillow>=10.0
+ultralytics>=8.3
+optuna>=3.0

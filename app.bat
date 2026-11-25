@@ -1,26 +1,24 @@
 @echo off
 setlocal
-
-rem Jalankan Labeler memakai Python dari venv (tanpa perlu activate) DAN TANPA jendela terminal.
-rem Letakkan file ini di folder tool-train (satu folder dengan app.py).
-rem Struktur yang diharapkan:
-rem   Zuchal\venv
-rem   Zuchal\belajar_code\tool-train\app.py
-rem
-rem pythonw.exe = python tanpa konsol. Semua pesan dan error tercatat di logs\app.log
-
 cd /d "%~dp0"
-set "PYW=%~dp0..\..\venv\Scripts\pythonw.exe"
 
-if not exist "%PYW%" (
-    echo [ERROR] pythonw venv tidak ditemukan di:
-    echo   %PYW%
-    echo Periksa lokasi venv atau ubah baris "set PYW=" di file ini.
+rem Cari virtual environment lokal agar repository dapat ditempatkan di folder mana pun.
+set "PYTHONW="
+if exist "%~dp0.venv\Scripts\pythonw.exe" set "PYTHONW=%~dp0.venv\Scripts\pythonw.exe"
+if not defined PYTHONW if exist "%~dp0venv\Scripts\pythonw.exe" set "PYTHONW=%~dp0venv\Scripts\pythonw.exe"
+
+if defined PYTHONW (
+    start "" "%PYTHONW%" "%~dp0app.py"
+    exit /b 0
+)
+
+rem Fallback ke Python dari PATH agar lokasi instalasi tidak dikunci.
+where python.exe >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Python tidak ditemukan. Pasang Python atau buat .venv di folder ini.
+    echo Panduan instalasi: README.md
     pause
     exit /b 1
 )
-
-start "" "%PYW%" app.py
-
+python "%~dp0app.py"
 endlocal
-exit /b 0
